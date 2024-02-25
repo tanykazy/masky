@@ -48,6 +48,8 @@ class EditorComponent extends LitElement {
           id="image-canvas"
           class="editor-canvas"
           style=${styleMap(styles)}
+          width="${this.width}"
+          height="${this.height}"
           @mousedown="${this.startPoint}"
           @mousemove="${this.movePoint}"
           @mouseup="${this.endPoint}"
@@ -65,8 +67,8 @@ class EditorComponent extends LitElement {
   }
 
   static properties = {
-    // width: {},
-    // height: {},
+    width: {},
+    height: {},
     moveflg: {},
     xpoint: {},
     ypoint: {},
@@ -75,6 +77,8 @@ class EditorComponent extends LitElement {
 
   constructor() {
     super();
+    this.width = 0;
+    this.height = 0;
     this.moveflg = false;
     this.xpoint = 0;
     this.ypoint = 0;
@@ -90,18 +94,34 @@ class EditorComponent extends LitElement {
     console.log(file);
 
     const fileReader = new FileReader();
-    fileReader.onload = (event) => {
-      this.imageLoader(event.target.result);
-    };
     fileReader.readAsDataURL(file);
+    fileReader.addEventListener("load", (event) => {
+      this.imageLoader(event.target.result);
+    });
+  }
+
+  imageLoader(url) {
+    const image = new Image();
+    image.src = url;
+    image.addEventListener("load", () => {
+      const canvas = this.renderRoot.getElementById("image-canvas");
+      const context = canvas.getContext("2d");
+      const height = 240;
+
+      canvas.width = (image.naturalWidth * height) / image.naturalHeight;
+      canvas.height = height;
+      // canvas.width = image.naturalWidth;
+      // canvas.height = image.naturalHeight;
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    });
   }
 
   // マウスホイール変更イベント
   mouseWheel(event) {
     console.log(event);
 
-    this.xpoint = event.clientX;
-    this.ypoint = event.clientY;
+    this.xpoint = event.offsetX;
+    this.ypoint = event.offsetY;
 
     // 拡大率算出
     const temp = event.deltaY < 0 ? 1 : -1;
@@ -132,62 +152,6 @@ class EditorComponent extends LitElement {
     // }
   }
 
-  // // 拡大縮小処理
-  // zoom() {
-  //   // 拡大縮小の起点を設定
-  //   $("#imageCanvas").css({
-  //     "transform-origin":
-  //       document.getElementById("dispX").innerHTML +
-  //       "px " +
-  //       document.getElementById("dispY").innerHTML +
-  //       "px",
-  //   });
-  //   $("#drawCanvas").css({
-  //     "transform-origin":
-  //       document.getElementById("dispX").innerHTML +
-  //       "px " +
-  //       document.getElementById("dispY").innerHTML +
-  //       "px",
-  //   });
-  //   $("#drawTempCanvas").css({
-  //     "transform-origin":
-  //       document.getElementById("dispX").innerHTML +
-  //       "px " +
-  //       document.getElementById("dispY").innerHTML +
-  //       "px",
-  //   });
-  //   $("#pointerCanvas").css({
-  //     "transform-origin":
-  //       document.getElementById("dispX").innerHTML +
-  //       "px " +
-  //       document.getElementById("dispY").innerHTML +
-  //       "px",
-  //   });
-
-  //   // 拡大縮小
-  //   $("#imageCanvas").css({ transform: "scale(" + zoomRario + ")" });
-  //   $("#drawCanvas").css({ transform: "scale(" + zoomRario + ")" });
-  //   $("#drawTempCanvas").css({ transform: "scale(" + zoomRario + ")" });
-  //   $("#pointerCanvas").css({ transform: "scale(" + zoomRario + ")" });
-  // }
-
-  imageLoader(url) {
-    const canvas = this.renderRoot.getElementById("image-canvas");
-    const context = canvas.getContext("2d");
-    const image = new Image();
-    image.onload = function () {
-      const height = 240;
-      canvas.width = (image.naturalWidth * height) / image.naturalHeight;
-      canvas.height = height;
-      // canvas.width = image.naturalWidth;
-      // canvas.height = image.naturalHeight;
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-      // console.log(canvas);
-    };
-    image.src = url;
-  }
-
   startPoint(event) {
     const canvas = this.renderRoot.getElementById("image-canvas");
     const context = canvas.getContext("2d");
@@ -197,8 +161,8 @@ class EditorComponent extends LitElement {
     context.beginPath();
 
     // 矢印の先っぽから始まるように調整
-    this.xpoint = event.clientX;
-    this.ypoint = event.clientY;
+    this.xpoint = event.offsetX;
+    this.ypoint = event.offsetY;
 
     context.moveTo(this.xpoint, this.ypoint);
   }
@@ -209,8 +173,8 @@ class EditorComponent extends LitElement {
       const canvas = this.renderRoot.getElementById("image-canvas");
       const context = canvas.getContext("2d");
 
-      this.xpoint = event.clientX;
-      this.ypoint = event.clientY;
+      this.xpoint = event.offsetX;
+      this.ypoint = event.offsetY;
       this.moveflg = true;
 
       const defSize = 2;
