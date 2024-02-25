@@ -7,11 +7,12 @@ import {
 import "./editor-component.js";
 
 export class MaskyContainer extends LitElement {
-  static properties = {};
+  static properties = {
+    width: {},
+    height: {},
+  };
   static styles = css`
     :host {
-      display: inline-block;
-      padding: 10px;
       background: lightgray;
     }
   `;
@@ -21,7 +22,12 @@ export class MaskyContainer extends LitElement {
   }
 
   render() {
-    return html` <editor-component></editor-component> `;
+    return html`
+      <editor-component
+        width="${this.width}"
+        height="${this.height}"
+      ></editor-component>
+    `;
   }
 }
 customElements.define("masky-container", MaskyContainer);

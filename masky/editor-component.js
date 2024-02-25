@@ -34,14 +34,28 @@ class EditorComponent extends LitElement {
       padding: 0;
       /* margin: 0; */
     }
+    #image-input {
+      position: absolute;
+      margin: auto;
+    }
   `;
 
   render() {
     const styles = {
-      ...this.styles,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      margin: "auto",
+      position: "absolute",
+      // border: 0,
+      // "max-width": "100%",
+      // "box-sizing": "content-box",
+      // padding: 0,
       "transform-origin": `${this.xpoint}px ${this.ypoint}px`,
-      transform: `scale(${this.zoomRario})`,
+      transform: `scale(${this.zoomRatio})`,
     };
+    // style=${styleMap(styles)}
     return html`
       <div id="editor-wrapper">
         <canvas
@@ -50,12 +64,37 @@ class EditorComponent extends LitElement {
           style=${styleMap(styles)}
           width="${this.width}"
           height="${this.height}"
+        >
+        </canvas>
+
+        <canvas
+          id="draw-canvas"
+          class="editor-canvas"
+          style=${styleMap(styles)}
+          width="${this.width}"
+          height="${this.height}"
+        ></canvas>
+
+        <canvas
+          id="temp-canvas"
+          class="editor-canvas"
+          style=${styleMap(styles)}
+          width="${this.width}"
+          height="${this.height}"
+        ></canvas>
+
+        <canvas
+          id="pointer-canvas"
+          class="editor-canvas"
+          style=${styleMap(styles)}
+          width="${this.width}"
+          height="${this.height}"
+          @wheel="${this.onMouseWheel}"
           @mousedown="${this.startPoint}"
           @mousemove="${this.movePoint}"
           @mouseup="${this.endPoint}"
-          @wheel="${this.mouseWheel}"
-        >
-        </canvas>
+        ></canvas>
+
         <input
           id="image-input"
           type="file"
@@ -72,17 +111,19 @@ class EditorComponent extends LitElement {
     moveflg: {},
     xpoint: {},
     ypoint: {},
-    zoomRario: {},
+    zoomRatio: {},
   };
 
   constructor() {
     super();
+    // console.log(this.width);
+    // console.log(this.height);
     this.width = 0;
     this.height = 0;
     this.moveflg = false;
     this.xpoint = 0;
     this.ypoint = 0;
-    this.zoomRario = 1;
+    this.zoomRatio = 1;
   }
 
   onInputImageFile(event) {
@@ -91,8 +132,7 @@ class EditorComponent extends LitElement {
     // console.log(input.value);
     // console.log(input.files);
     const file = input.files[0];
-    console.log(file);
-
+    // console.log(file);
     const fileReader = new FileReader();
     fileReader.readAsDataURL(file);
     fileReader.addEventListener("load", (event) => {
@@ -104,40 +144,45 @@ class EditorComponent extends LitElement {
     const image = new Image();
     image.src = url;
     image.addEventListener("load", () => {
-      const canvas = this.renderRoot.getElementById("image-canvas");
-      const context = canvas.getContext("2d");
-      const height = 240;
+      const scale = Math.min(
+        this.width / image.naturalWidth,
+        this.height / image.naturalHeight
+      );
+      // console.log(scale);
 
-      canvas.width = (image.naturalWidth * height) / image.naturalHeight;
-      canvas.height = height;
-      // canvas.width = image.naturalWidth;
-      // canvas.height = image.naturalHeight;
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      this.width = image.width * scale;
+      this.height = image.height * scale;
+      // console.log(this.width);
+      // console.log(this.height);
+
+      window.setTimeout(() => {
+        const canvas = this.renderRoot.getElementById("image-canvas");
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0, this.width, this.height);
+        // context.drawImage(image, 0, 0, image.width, image.height);
+      });
     });
   }
 
   // マウスホイール変更イベント
-  mouseWheel(event) {
-    console.log(event);
-
+  onMouseWheel(event) {
     this.xpoint = event.offsetX;
     this.ypoint = event.offsetY;
 
     // 拡大率算出
-    const temp = event.deltaY < 0 ? 1 : -1;
-    this.zoomRario += 0.1 * temp;
+    const direction = event.deltaY < 0 ? 1 : -1;
+    this.zoomRatio += 0.1 * direction;
 
-    // 拡大率は1～5まで
-    if (this.zoomRario < 1) {
-      this.zoomRario = 1;
-    } else if (this.zoomRario > 10) {
-      this.zoomRario = 10;
+    if (this.zoomRatio < 1) {
+      this.zoomRatio = 1;
+    } else if (this.zoomRatio > 10) {
+      this.zoomRatio = 10;
     }
 
     // 小数点第二以下切り捨て
-    this.zoomRario = Math.round(this.zoomRario * 10) / 10;
+    this.zoomRatio = Math.round(this.zoomRatio * 10) / 10;
 
-    console.log(this.zoomRario);
+    // console.log(this.zoomRario);
 
     // 算出した拡大率で描画
     // zoom();
@@ -160,7 +205,6 @@ class EditorComponent extends LitElement {
 
     context.beginPath();
 
-    // 矢印の先っぽから始まるように調整
     this.xpoint = event.offsetX;
     this.ypoint = event.offsetY;
 
